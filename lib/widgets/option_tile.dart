@@ -8,39 +8,79 @@ class OptionTile extends StatelessWidget {
   final VoidCallback onTap;
 
   const OptionTile({
-    super.key,
+    Key? key,
     required this.optionText,
     required this.isCorrect,
     required this.isSelected,
     required this.answered,
     required this.onTap,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    Color? tileColor;
+    // Decide states
+    final bool isWrong = answered && isSelected && !isCorrect;
+    final bool isRight = answered && isCorrect;
 
-    if (answered) {
-      if (isCorrect) {
-        tileColor = Colors.green;
-      } else if (isSelected) {
-        tileColor = Colors.red;
-      }
+    // Colors — tweak to your taste
+    final Color rightColor = Colors.greenAccent.shade400;
+    final Color wrongColor = Colors.redAccent.shade200;
+    final Color defaultBg = Colors.white.withOpacity(0.02);
+
+    Color bgColor;
+    Color textColor = Colors.white;
+
+    if (isRight) {
+      bgColor = rightColor;
+      textColor = Colors.black;
+    } else if (isWrong) {
+      bgColor = wrongColor;
+      textColor = Colors.black;
+    } else {
+      bgColor = defaultBg;
+      textColor = Colors.white.withOpacity(0.9);
     }
 
-    return GestureDetector(
-      onTap: !answered ? onTap : null,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: tileColor ?? Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.grey.shade400),
-        ),
-        child: Text(
-          optionText,
-          style: const TextStyle(fontSize: 16),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: answered ? null : onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 240),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withOpacity(0.06)),
+            boxShadow: [
+              if (isRight || isWrong)
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.25),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  optionText,
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              // optional check/cross icon
+              if (answered && isRight)
+                const Icon(Icons.check_circle, color: Colors.black)
+              else if (answered && isWrong)
+                const Icon(Icons.cancel, color: Colors.black),
+            ],
+          ),
         ),
       ),
     );

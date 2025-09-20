@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:remembrance/models/question.dart';
 import 'package:remembrance/screens/result_screen.dart';
 import 'package:remembrance/widgets/option_tile.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 class QuizScreen extends StatefulWidget {
   final String mode;
@@ -18,22 +20,23 @@ class QuizScreen extends StatefulWidget {
   State<QuizScreen> createState() => _QuizScreenState();
 }
 
-class _QuizScreenState extends State<QuizScreen> with SingleTickerProviderStateMixin {
+class _QuizScreenState extends State<QuizScreen>
+    with SingleTickerProviderStateMixin {
   int currentIndex = 0;
   int score = 0;
   bool answered = false;
   String? selectedOption;
   late List<String> shuffledOptions;
 
-  // Animation controller for entry animations
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
 
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
   @override
   void initState() {
     super.initState();
-    // initial shuffle
     shuffledOptions = widget.questions[currentIndex].getShuffledOptions();
 
     _animController = AnimationController(
@@ -41,21 +44,39 @@ class _QuizScreenState extends State<QuizScreen> with SingleTickerProviderStateM
       duration: const Duration(milliseconds: 600),
     );
 
-    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeIn);
+    _fadeAnim =
+        CurvedAnimation(parent: _animController, curve: Curves.easeIn);
     _slideAnim = Tween<Offset>(begin: const Offset(0, 0.03), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
+        .animate(
+            CurvedAnimation(parent: _animController, curve: Curves.easeOut));
 
-    // play intro animation
     _animController.forward();
   }
 
   @override
   void dispose() {
     _animController.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
-  void checkAnswer(String option) {
+  /// 🎵 Play correct sound
+  Future<void> playCorrect() async {
+    final bytes =
+        await rootBundle.load('lib/assets/sounds/correct.mp3');
+    final sound = bytes.buffer.asUint8List();
+    await _audioPlayer.play(BytesSource(sound));
+  }
+
+  /// 🎵 Play incorrect sound
+  Future<void> playIncorrect() async {
+    final bytes =
+        await rootBundle.load('lib/assets/sounds/incorrect.mp3');
+    final sound = bytes.buffer.asUint8List();
+    await _audioPlayer.play(BytesSource(sound));
+  }
+
+  Future<void> checkAnswer(String option) async {
     if (answered) return;
 
     HapticFeedback.selectionClick();
@@ -67,11 +88,17 @@ class _QuizScreenState extends State<QuizScreen> with SingleTickerProviderStateM
         score++;
       }
     });
+
+    // 🎵 Play sound depending on correctness
+    if (option == widget.questions[currentIndex].correctAnswer) {
+      await playCorrect();
+    } else {
+      await playIncorrect();
+    }
   }
 
   void nextQuestion() {
     if (!answered) {
-      // optionally, you can provide a small hint that user must answer before proceed
       HapticFeedback.vibrate();
       return;
     }
@@ -81,10 +108,10 @@ class _QuizScreenState extends State<QuizScreen> with SingleTickerProviderStateM
         currentIndex++;
         answered = false;
         selectedOption = null;
-        shuffledOptions = widget.questions[currentIndex].getShuffledOptions();
+        shuffledOptions =
+            widget.questions[currentIndex].getShuffledOptions();
       });
 
-      // replay the small entry animation for the new question
       _animController
         ..reset()
         ..forward();
@@ -97,7 +124,8 @@ class _QuizScreenState extends State<QuizScreen> with SingleTickerProviderStateM
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) => ResultScreen(score: score, total: widget.questions.length),
+        builder: (_) =>
+            ResultScreen(score: score, total: widget.questions.length),
       ),
     );
   }
@@ -107,9 +135,12 @@ class _QuizScreenState extends State<QuizScreen> with SingleTickerProviderStateM
       context: context,
       builder: (_) => AlertDialog(
         title: const Text("End Quiz?"),
-        content: const Text("Do you really want to end the quiz? Your current progress will be shown."),
+        content: const Text(
+            "Do you really want to end the quiz? Your current progress will be shown."),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("No")),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("No")),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
@@ -129,7 +160,6 @@ class _QuizScreenState extends State<QuizScreen> with SingleTickerProviderStateM
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
       child: Row(
         children: [
-          // progress text
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -165,68 +195,159 @@ class _QuizScreenState extends State<QuizScreen> with SingleTickerProviderStateM
       ),
     );
   }
-
-  Widget _buildQuestionCard(BuildContext context, Question question) {
-    return SlideTransition(
-      position: _slideAnim,
-      child: FadeTransition(
-        opacity: _fadeAnim,
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.06),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withOpacity(0.08)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.45),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+Widget _buildQuestionCard(BuildContext context, Question question) {
+  return SlideTransition(
+    position: _slideAnim,
+    child: FadeTransition(
+      opacity: _fadeAnim,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.06),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withOpacity(0.08)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.45),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle <br> and </br> tags for formatting
+            _buildFormattedQuestion(question.text),
+            const SizedBox(height: 12),
+            if (question.options.isNotEmpty)
               Text(
-                question.text,
+                'Choose one answer',
+                style: TextStyle(
+                    color: Colors.white.withOpacity(0.65), fontSize: 13),
+              ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+// Add this new method to your _QuizScreenState class:
+Widget _buildFormattedQuestion(String text) {
+  // Check if text contains <br> and </br> tags
+  if (text.contains('<br>') && text.contains('</br>')) {
+    RegExp regex = RegExp(r'<br>(.*?)</br>');
+    List<Widget> widgets = [];
+    int lastIndex = 0;
+    
+    // Find all matches of text between <br> and </br>
+    Iterable<RegExpMatch> matches = regex.allMatches(text);
+    
+    for (RegExpMatch match in matches) {
+      // Add text before the tag (if any)
+      if (match.start > lastIndex) {
+        String beforeText = text.substring(lastIndex, match.start).trim();
+        if (beforeText.isNotEmpty) {
+          widgets.add(
+            Text(
+              beforeText,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          );
+          widgets.add(const SizedBox(height: 16));
+        }
+      }
+      
+      // Add the formatted text (text between <br> and </br>)
+      String formattedText = match.group(1)?.trim() ?? '';
+      if (formattedText.isNotEmpty) {
+        widgets.add(
+          Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.blue.withOpacity(0.4),
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                formattedText,
                 style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
+                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 12),
-              if (question.options.length > 0)
-                Text(
-                  'Choose one answer',
-                  style: TextStyle(color: Colors.white.withOpacity(0.65), fontSize: 13),
-                ),
-            ],
+            ),
           ),
-        ),
+        );
+        widgets.add(const SizedBox(height: 16));
+      }
+      
+      lastIndex = match.end;
+    }
+    
+    // Add remaining text after the last tag (if any)
+    if (lastIndex < text.length) {
+      String remainingText = text.substring(lastIndex).trim();
+      if (remainingText.isNotEmpty) {
+        widgets.add(
+          Text(
+            remainingText,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+        );
+      }
+    }
+    
+    // Remove the last SizedBox if it exists
+    if (widgets.isNotEmpty && widgets.last is SizedBox) {
+      widgets.removeLast();
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: widgets,
+    );
+  } else {
+    // Regular question without <br></br> tags
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: Colors.white,
       ),
     );
   }
+}
 
   Widget _buildOptions(BuildContext context, Question question) {
-    // Show options with staggered entrance animations.
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
       child: Column(
         children: List.generate(shuffledOptions.length, (i) {
           final option = shuffledOptions[i];
-          // For OptionTile: provide isCorrect, isSelected, answered.
           final isCorrect = option == question.correctAnswer;
           final isSelected = option == selectedOption;
 
-          // staggered animation delay
-          final delayMs = 80 * i;
-
           return TweenAnimationBuilder<double>(
             tween: Tween(begin: 0.0, end: 1.0),
-            duration: Duration(milliseconds: 350),
+            duration: const Duration(milliseconds: 350),
             curve: Curves.easeOut,
             builder: (context, value, child) {
               return Opacity(
@@ -244,8 +365,6 @@ class _QuizScreenState extends State<QuizScreen> with SingleTickerProviderStateM
               answered: answered,
               onTap: () => checkAnswer(option),
             ),
-            // simple delayed start by using Future.microtask to start later
-            onEnd: () {},
           );
         }),
       ),
@@ -255,7 +374,6 @@ class _QuizScreenState extends State<QuizScreen> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     final question = widget.questions[currentIndex];
-    final theme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -264,13 +382,8 @@ class _QuizScreenState extends State<QuizScreen> with SingleTickerProviderStateM
           children: [
             const SizedBox(height: 6),
             _buildHeader(context),
-
-            // Question card
             _buildQuestionCard(context, question),
-
             const SizedBox(height: 6),
-
-            // Options area (takes remaining space)
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
@@ -281,36 +394,49 @@ class _QuizScreenState extends State<QuizScreen> with SingleTickerProviderStateM
                 ),
               ),
             ),
-
-            // Bottom action row: Next button + small info
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0, vertical: 12),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.03),
-                border: Border(top: BorderSide(color: Colors.white.withOpacity(0.02))),
+                border: Border(
+                    top: BorderSide(
+                        color: Colors.white.withOpacity(0.02))),
               ),
               child: Row(
                 children: [
-                  // Answer summary
                   Expanded(
                     child: Text(
                       answered
-                          ? (selectedOption == question.correctAnswer ? 'Correct ✅' : 'Incorrect ❌')
+                          ? (selectedOption ==
+                                  question.correctAnswer
+                              ? 'Correct ✅'
+                              : 'Incorrect ❌')
                           : 'Select an answer',
-                      style: TextStyle(color: Colors.white.withOpacity(0.9)),
+                      style: TextStyle(
+                          color: Colors.white.withOpacity(0.9)),
                     ),
                   ),
-
                   ElevatedButton(
                     onPressed: answered ? nextQuestion : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: answered ? Colors.greenAccent[700] : Colors.grey[700],
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      backgroundColor: answered
+                          ? Colors.greenAccent[700]
+                          : Colors.grey[700],
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                     child: Text(
-                      currentIndex < widget.questions.length - 1 ? 'Next' : 'Finish',
-                      style: TextStyle(color: answered ? Colors.black : Colors.white70),
+                      currentIndex <
+                              widget.questions.length - 1
+                          ? 'Next'
+                          : 'Finish',
+                      style: TextStyle(
+                          color: answered
+                              ? Colors.black
+                              : Colors.white70),
                     ),
                   ),
                 ],
