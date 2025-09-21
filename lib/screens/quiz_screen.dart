@@ -195,146 +195,164 @@ class _QuizScreenState extends State<QuizScreen>
       ),
     );
   }
-Widget _buildQuestionCard(BuildContext context, Question question) {
-  return SlideTransition(
-    position: _slideAnim,
-    child: FadeTransition(
-      opacity: _fadeAnim,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.06),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.08)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.45),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle <br> and </br> tags for formatting
-            _buildFormattedQuestion(question.text),
-            const SizedBox(height: 12),
-            if (question.options.isNotEmpty)
-              Text(
-                'Choose one answer',
-                style: TextStyle(
-                    color: Colors.white.withOpacity(0.65), fontSize: 13),
+
+  Widget _buildQuestionCard(BuildContext context, Question question) {
+    return SlideTransition(
+      position: _slideAnim,
+      child: FadeTransition(
+        opacity: _fadeAnim,
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+          constraints: BoxConstraints(
+            // Limit the question card to maximum 40% of screen height
+            maxHeight: MediaQuery.of(context).size.height * 0.4,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.06),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withOpacity(0.08)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.45),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
               ),
-          ],
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Fixed header section
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (question.options.isNotEmpty)
+                      Text(
+                        'Choose one answer',
+                        style: TextStyle(
+                            color: Colors.white.withOpacity(0.65), fontSize: 13),
+                      ),
+                  ],
+                ),
+              ),
+              // Scrollable question content
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  child: _buildFormattedQuestion(question.text),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
-// Add this new method to your _QuizScreenState class:
-Widget _buildFormattedQuestion(String text) {
-  // Check if text contains <br> and </br> tags
-  if (text.contains('<br>') && text.contains('</br>')) {
-    RegExp regex = RegExp(r'<br>(.*?)</br>');
-    List<Widget> widgets = [];
-    int lastIndex = 0;
-    
-    // Find all matches of text between <br> and </br>
-    Iterable<RegExpMatch> matches = regex.allMatches(text);
-    
-    for (RegExpMatch match in matches) {
-      // Add text before the tag (if any)
-      if (match.start > lastIndex) {
-        String beforeText = text.substring(lastIndex, match.start).trim();
-        if (beforeText.isNotEmpty) {
+  // Add this new method to your _QuizScreenState class:
+  Widget _buildFormattedQuestion(String text) {
+    // Check if text contains <br> and </br> tags
+    if (text.contains('<br>') && text.contains('</br>')) {
+      RegExp regex = RegExp(r'<br>(.*?)</br>');
+      List<Widget> widgets = [];
+      int lastIndex = 0;
+      
+      // Find all matches of text between <br> and </br>
+      Iterable<RegExpMatch> matches = regex.allMatches(text);
+      
+      for (RegExpMatch match in matches) {
+        // Add text before the tag (if any)
+        if (match.start > lastIndex) {
+          String beforeText = text.substring(lastIndex, match.start).trim();
+          if (beforeText.isNotEmpty) {
+            widgets.add(
+              Text(
+                beforeText,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            );
+            widgets.add(const SizedBox(height: 12));
+          }
+        }
+        
+        // Add the formatted text (text between <br> and </br>)
+        String formattedText = match.group(1)?.trim() ?? '';
+        if (formattedText.isNotEmpty) {
+          widgets.add(
+            Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.blue.withOpacity(0.4),
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  formattedText,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          );
+          widgets.add(const SizedBox(height: 12));
+        }
+        
+        lastIndex = match.end;
+      }
+      
+      // Add remaining text after the last tag (if any)
+      if (lastIndex < text.length) {
+        String remainingText = text.substring(lastIndex).trim();
+        if (remainingText.isNotEmpty) {
           widgets.add(
             Text(
-              beforeText,
+              remainingText,
               style: const TextStyle(
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
               ),
             ),
           );
-          widgets.add(const SizedBox(height: 16));
         }
       }
       
-      // Add the formatted text (text between <br> and </br>)
-      String formattedText = match.group(1)?.trim() ?? '';
-      if (formattedText.isNotEmpty) {
-        widgets.add(
-          Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.blue.withOpacity(0.4),
-                  width: 1,
-                ),
-              ),
-              child: Text(
-                formattedText,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-        );
-        widgets.add(const SizedBox(height: 16));
+      // Remove the last SizedBox if it exists
+      if (widgets.isNotEmpty && widgets.last is SizedBox) {
+        widgets.removeLast();
       }
       
-      lastIndex = match.end;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: widgets,
+      );
+    } else {
+      // Regular question without <br></br> tags
+      return Text(
+        text,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
+      );
     }
-    
-    // Add remaining text after the last tag (if any)
-    if (lastIndex < text.length) {
-      String remainingText = text.substring(lastIndex).trim();
-      if (remainingText.isNotEmpty) {
-        widgets.add(
-          Text(
-            remainingText,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
-        );
-      }
-    }
-    
-    // Remove the last SizedBox if it exists
-    if (widgets.isNotEmpty && widgets.last is SizedBox) {
-      widgets.removeLast();
-    }
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: widgets,
-    );
-  } else {
-    // Regular question without <br></br> tags
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.w600,
-        color: Colors.white,
-      ),
-    );
   }
-}
 
   Widget _buildOptions(BuildContext context, Question question) {
     return Padding(
@@ -382,8 +400,10 @@ Widget _buildFormattedQuestion(String text) {
           children: [
             const SizedBox(height: 6),
             _buildHeader(context),
+            // Question card with limited height
             _buildQuestionCard(context, question),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
+            // Options section - takes remaining space
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
@@ -394,6 +414,7 @@ Widget _buildFormattedQuestion(String text) {
                 ),
               ),
             ),
+            // Bottom action bar
             Container(
               padding: const EdgeInsets.symmetric(
                   horizontal: 16.0, vertical: 12),

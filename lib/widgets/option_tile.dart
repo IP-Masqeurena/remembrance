@@ -29,16 +29,20 @@ class OptionTile extends StatelessWidget {
 
     Color bgColor;
     Color textColor = Colors.white;
+    Color borderColor; // Add a new color variable for the border
 
     if (isRight) {
       bgColor = rightColor;
       textColor = Colors.black;
+      borderColor = rightColor; // Use the same color for the border when correct
     } else if (isWrong) {
       bgColor = wrongColor;
       textColor = Colors.black;
+      borderColor = wrongColor; // Use the same color for the border when wrong
     } else {
       bgColor = defaultBg;
       textColor = Colors.white.withOpacity(0.9);
+      borderColor = Colors.white.withOpacity(0.2); // A more visible white border
     }
 
     return Padding(
@@ -52,7 +56,7 @@ class OptionTile extends StatelessWidget {
           decoration: BoxDecoration(
             color: bgColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.06)),
+            border: Border.all(color: borderColor, width: 1.0), // Use the new borderColor variable
             boxShadow: [
               if (isRight || isWrong)
                 BoxShadow(

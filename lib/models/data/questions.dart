@@ -33,7 +33,7 @@ final List<Question> allQuestions = [
     correctAnswer: "I dan IV ",
   ),
   Question(
-    text: "Mitklumat berikut berkaitan dengan peristiwa yang berfaku di Eropah.<br>Krisis Rantau Balkan<br> <br> Pembunuhan Archduke FPerdinand, Putera Mabkota Austria-Hungary dan isterinya Sophie oleh seorang pemuda Serbia.<br> Apakah kesan segera daripada peristiwa berikut?   ",
+    text: "Maklumat berikut berkaitan dengan peristiwa yang berlaku di Eropah.<br>Krisis Rantau Balkan, Pembunuhan Archduke Ferdinand, Putera Mabkota Austria-Hungary dan isterinya Sophie oleh seorang pemuda Serbia.</br> Apakah kesan segera daripada peristiwa berikut?   ",
     options: ["Pembentukan negara baharu ", "Pemcrintahan beraja berakhir ", "Perang Dunia Pertama tercetus ", "Pembubaran Perjanjian Versailles "],
     correctAnswer: "Perang Dunia Pertama tercetus ",
   ),

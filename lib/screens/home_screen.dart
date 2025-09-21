@@ -50,6 +50,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   void _startQuiz(BuildContext context, String mode) {
     HapticFeedback.lightImpact();
+
+    allQuestions.shuffle();
     
     int questionCount;
     switch (mode) {

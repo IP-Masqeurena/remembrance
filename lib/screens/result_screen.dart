@@ -81,29 +81,24 @@ Future<void> _saveResult() async {
 
     DocumentFile? baseDir;
 
-    // If we already have a saved URI, try to instantiate it
+    // If we already have a saved URI, try to use it directly
     if (savedDirUri != null) {
       try {
         baseDir = await DocumentFile.fromUri(savedDirUri);
-        // validate the permission is still valid
-        final perms = await DocMan.perms.list(files: false);
-        final stillHas = perms.any((p) => p.uri == baseDir!.uri);
-        if (!stillHas) {
-          // permission gone - null it to re-prompt
-          baseDir = null;
+        // Test if we can actually use it by checking if it exists
+        if (!(await baseDir!.exists)) {
+          throw Exception('Directory no longer exists');
         }
       } catch (e) {
+        // If we can't use the saved URI, clear it and ask for a new one
         baseDir = null;
+        await prefs.remove('dreamless_dir_uri');
       }
     }
 
-    // If we don't have a valid baseDir, ask the user to pick one (SAF picker).
-    // Ask the user to select the Documents folder (or a folder inside Documents).
+    // If we don't have a valid baseDir, ask the user to pick one
     if (baseDir == null) {
-      final picked = await DocMan.pick.directory(
-        // grantPermissions default behavior already grants persistable permission
-        // optionally you can set initDir if you have an uri to start from
-      );
+      final picked = await DocMan.pick.directory();
 
       if (picked == null) {
         // user cancelled
@@ -121,7 +116,7 @@ Future<void> _saveResult() async {
       await prefs.setString('dreamless_dir_uri', baseDir.uri);
     }
 
-    // At this point baseDir is a directory the app may write into (persisted permission).
+    // At this point baseDir is a directory the app may write into
     // Create / find the "Dreamless Dreams" subfolder
     DocumentFile? dreamDir = await baseDir.find('Dreamless Dreams');
     if (dreamDir == null) {
@@ -131,7 +126,7 @@ Future<void> _saveResult() async {
       }
     }
 
-    // Create the text file inside Dreamless Dreams (name + content)
+    // Create the text file inside Dreamless Dreams
     final filename = 'quiz_result_${DateTime.now().millisecondsSinceEpoch}.txt';
     final created = await dreamDir.createFile(name: filename, content: content);
 
