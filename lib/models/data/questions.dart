@@ -696,6 +696,7 @@ Question(
   ],
   correctAnswer: "Menandakan berakhirnya pentadbiran Britain",
   ),
+  //---------KL 2024 ----------
   Question(
   text: "Apakah yang dimaksudkan dengan kedaulatan bagi sesebuah negara?",
   options: [

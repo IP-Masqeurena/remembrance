@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:remembrance/models/question.dart';
 import 'package:remembrance/screens/result_screen.dart';
+import 'package:remembrance/services/db_services.dart';
 import 'package:remembrance/widgets/option_tile.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -9,11 +10,15 @@ import 'package:flutter/services.dart' show rootBundle;
 class QuizScreen extends StatefulWidget {
   final String mode;
   final List<Question> questions;
+   final int? sessionId;
+   final List<int>? questionIndices;
 
   const QuizScreen({
     super.key,
     required this.mode,
     required this.questions,
+    this.sessionId,
+    this.questionIndices,
   });
 
   @override
@@ -120,7 +125,35 @@ class _QuizScreenState extends State<QuizScreen>
     }
   }
 
-  void endQuiz() {
+  void endQuiz() async {
+    int? sessionIdToRecord = widget.sessionId;
+    
+    // If this is a new quiz (not a reattempt), create the session now
+    if (widget.sessionId == null && widget.mode != 'endless') {
+      try {
+        final newSessionId = await DBService.instance.createSession(
+          widget.mode, 
+          widget.questionIndices ?? []
+        );
+        sessionIdToRecord = newSessionId;
+      } catch (e) {
+        print('Failed to create session: $e');
+      }
+    }
+
+    // Record attempt only if we have a sessionId (not in endless mode)
+    if (sessionIdToRecord != null) {
+      try {
+        await DBService.instance.recordAttempt(
+          sessionIdToRecord, 
+          score, 
+          widget.questions.length
+        );
+      } catch (e) {
+        print('Failed to record attempt: $e');
+      }
+    }
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
