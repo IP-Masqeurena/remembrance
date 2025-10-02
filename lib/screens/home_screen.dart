@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:remembrance/models/data/questions.dart';
 import 'package:remembrance/screens/memory_screeen.dart';
+import 'package:remembrance/screens/update_screen.dart';
 import 'package:remembrance/services/db_services.dart';
 import 'quiz_screen.dart';
 
@@ -151,6 +152,23 @@ void _startQuiz(BuildContext context, String mode, {int? sessionId}) async {
             child: Column(
               children: [
                 const SizedBox(height: 10),
+                Row(
+                  children: [
+                    const Expanded(child: SizedBox()), // push icon to right
+                    // Update icon (top-right)
+                    IconButton(
+                      tooltip: 'Check for update',
+                      icon: const Icon(Icons.system_update_alt, color: Colors.white),
+                      onPressed: () {
+                        // Navigate to the Update page
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const UpdatePage()),
+                        );
+                      },
+                    ),
+                  ],
+                ),
                 // Header Section
                 FadeTransition(
                   opacity: _fadeAnimation,

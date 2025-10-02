@@ -1,4 +1,6 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools"
+          package="com.example.remembrance">
     <application
         android:label="remembrance"
         android:name="${applicationName}"
@@ -30,7 +32,20 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+             <provider
+        android:name="androidx.core.content.FileProvider"
+        android:authorities="${applicationId}.ota_update_provider"
+        android:exported="false"
+        android:grantUriPermissions="true"
+        tools:replace="android:authorities">
+        <meta-data
+            android:name="android.support.FILE_PROVIDER_PATHS"
+            android:resource="@xml/ota_update_provider_paths"
+            tools:replace="android:resource"  />
+    </provider>
     </application>
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
          https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.

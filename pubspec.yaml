@@ -38,6 +38,7 @@ dependencies:
   audioplayers: ^6.1.0
   sqflite: ^2.2.8
   docman: ^1.2.0
+  ota_update: ^7.0.2
   
 
 dev_dependencies:
