@@ -166,7 +166,7 @@ class _UpdatePageState extends State<UpdatePage> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Download package from server and install.',
+                        'Download update from server and install.',
                         style: TextStyle(color: Colors.white.withOpacity(0.7)),
                         textAlign: TextAlign.center,
                       ),
@@ -175,10 +175,11 @@ class _UpdatePageState extends State<UpdatePage> {
                 ),
 
                 const SizedBox(height: 20),
-
+                if (_isUpdating) ...[
                 // status + progress
                 Text('Status: $_status', style: TextStyle(color: Colors.white.withOpacity(0.9))),
                 const SizedBox(height: 8),
+                
                 LinearProgressIndicator(
                   value: _progress > 0 ? (_progress / 100.0) : null,
                   minHeight: 8,
@@ -189,7 +190,7 @@ class _UpdatePageState extends State<UpdatePage> {
                   _progress > 0 ? '${_progress.toStringAsFixed(1)}%' : '',
                   style: TextStyle(color: Colors.white.withOpacity(0.8)),
                 ),
-
+                ],
                 const Spacer(),
 
                 // Buttons
